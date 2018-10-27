@@ -1,0 +1,9 @@
+include(CMakeFindDependencyMacro)
+
+find_dependency(Boost 1.68.0 REQUIRED)
+# find_dependency(FLEX 2.6.4 REQUIRED)
+# find_dependency(BISON 3.0.4 REQUIRED)
+
+if(NOT TARGET CMakeParser::CMakeParser)
+  include("${CMAKE_CURRENT_LIST_DIR}/CMakeParserTargets.cmake")
+endif()

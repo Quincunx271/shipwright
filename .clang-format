@@ -1,0 +1,32 @@
+################################################################################
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+################################################################################
+
+AllowShortIfStatementsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: None
+AlwaysBreakTemplateDeclarations: true
+BasedOnStyle: WebKit
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: false
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: false
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: false
+  BeforeElse: false
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: true
+IndentWidth: 4
+Cpp11BracedListStyle:                true
+NamespaceIndentation:                All
+Standard:                            Cpp11
+ColumnLimit: 80
+PenaltyReturnTypeOnItsOwnLine: 50
+PenaltyBreakBeforeFirstCallParameter: 50
