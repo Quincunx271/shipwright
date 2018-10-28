@@ -6,5 +6,5 @@
 
 #pragma once
 
-#include <shipwright/lexer.hpp>
-#include <shipwright/token.hpp>
+#include <shipwright/detail/lexer.hpp>
+#include <shipwright/token.test.hpp>
