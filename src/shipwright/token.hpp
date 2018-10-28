@@ -31,8 +31,6 @@ namespace shipwright {
         variable_reference_piece,
         variable_reference_close,
 
-        // escape sequences
-
         bracket_comment,
         line_comment,
     };

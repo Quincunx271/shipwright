@@ -46,6 +46,11 @@ struct shipwright_cmake_lexer_impl_extra_vars
         current_position = full_current_position;
         token_length = length;
     }
+
+    void increment_only_full_position(std::size_t length) {
+        increment_position(length);
+        token_length = 0;
+    }
 };
 %}
 
@@ -77,7 +82,7 @@ quoted_element {escape_sequence}|{quoted_continuation}
 }
 
 \n {
-    yyextra.increment_position(yyleng);
+    yyextra.increment_only_full_position(yyleng);
     yyextra.type = shipwright::token_type::newline;
     return 1;
 }
@@ -89,13 +94,13 @@ quoted_element {escape_sequence}|{quoted_continuation}
 }
 
 \( {
-    yyextra.increment_position(yyleng);
+    yyextra.increment_only_full_position(yyleng);
     yyextra.type = shipwright::token_type::lparen;
     return 1;
 }
 
 \) {
-    yyextra.increment_position(yyleng);
+    yyextra.increment_only_full_position(yyleng);
     yyextra.type = shipwright::token_type::rparen;
     return 1;
 }
@@ -155,14 +160,14 @@ quoted_element {escape_sequence}|{quoted_continuation}
 }
 
 \" {
-    yyextra.increment_position(yyleng);
+    yyextra.increment_only_full_position(yyleng);
     yyextra.type = shipwright::token_type::quote;
     BEGIN(QUOTE);
     return 1;
 }
 
 <QUOTE>\" {
-    yyextra.increment_position(yyleng);
+    yyextra.increment_only_full_position(yyleng);
     yyextra.type = shipwright::token_type::quote;
     BEGIN(INITIAL);
     return 1;
@@ -181,7 +186,7 @@ quoted_element {escape_sequence}|{quoted_continuation}
 }
 
 <INITIAL,QUOTE,VARIABLE_REFERENCE>\$\{ {
-    yyextra.increment_position(yyleng);
+    yyextra.increment_only_full_position(yyleng);
     yyextra.type = shipwright::token_type::variable_reference_open;
 
     yyextra.start_condition = YY_START;
@@ -207,7 +212,7 @@ quoted_element {escape_sequence}|{quoted_continuation}
 }
 
 <VARIABLE_REFERENCE>\} {
-    yyextra.increment_position(yyleng);
+    yyextra.increment_only_full_position(yyleng);
     yyextra.type = shipwright::token_type::variable_reference_close;
 
     if (yyextra.variable_reference_depth == 0) {
