@@ -64,6 +64,11 @@ identifier [A-Za-z_][A-Za-z0-9_]*
     return 1;
 }
 
+#.* {
+    yyextra.type = shipwright::token_type::line_comment;
+    return 1;
+}
+
 %%
 
 namespace shipwright::detail {
