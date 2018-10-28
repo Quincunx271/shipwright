@@ -12,9 +12,11 @@
 
 int main()
 {
-    auto const input = static_cast<std::ostringstream&>(
-        std::ostringstream{} << std::cin.rdbuf())
-                           .str();
+    auto const input = [] {
+        std::ostringstream out;
+        out << std::cin.rdbuf();
+        return out.str();
+    }();
 
     shipwright::lexer lex{input};
 

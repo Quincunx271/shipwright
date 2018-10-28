@@ -5,8 +5,10 @@
  */
 
 %{
+#include <cassert>
 #include <cstddef>
 #include <iterator>
+#include <limits>
 #include <optional>
 #include <utility>
 
@@ -60,6 +62,8 @@ struct shipwright_cmake_lexer_impl_extra_vars
 %option extra-type="shipwright_cmake_lexer_impl_extra_vars"
 %option prefix="shipwright_cmake_lexer_impl"
 %option noyywrap
+%option never-interactive
+%option nounistd
 %pointer
 %x LINE_COMMENT
 %x BRACKET
@@ -273,7 +277,8 @@ namespace shipwright {
         : input_{input}
     {
         yylex_init(&lexer_);
-        yy_scan_bytes(input_.data(), input_.size(), lexer_);
+        assert(input_.size() < std::numeric_limits<int>::max());
+        yy_scan_bytes(input_.data(), static_cast<int>(input_.size()), lexer_);
 
         lookahead_token_ = ::read_token(input_, lexer_);
         advance();
