@@ -16,8 +16,17 @@
 #include <string>
 #include <vector>
 
+using shipwright::lexer;
 using shipwright::token;
 using shipwright::token_type;
+
+TEST_CASE("Empty lexer iterator equal to sentinel", "[lexer]")
+{
+    CHECK(lexer::iterator{} == lexer::sentinel{});
+    CHECK(lexer::sentinel{} == lexer::iterator{});
+    CHECK_FALSE(lexer::iterator{} != lexer::sentinel{});
+    CHECK_FALSE(lexer::sentinel{} != lexer::iterator{});
+}
 
 TEST_CASE("Can parse individual tokens", "[lexer]")
 {
@@ -53,14 +62,19 @@ TEST_CASE("Can parse individual tokens", "[lexer]")
 
     CAPTURE(input, expected);
 
-    shipwright::detail::lexer lex{input};
+    lexer lex{input};
 
-    REQUIRE(lex.advance());
-    auto result = lex.read();
+    auto begin = lex.begin();
+    auto const end = lex.end();
+
+    REQUIRE(begin != end);
+
+    auto result = *begin;
 
     CHECK(result == expected);
 
-    REQUIRE_FALSE(lex.advance());
+    ++begin;
+    REQUIRE(begin == end);
 }
 
 TEST_CASE("Can parse multiple tokens", "[lexer]")
@@ -108,19 +122,24 @@ TEST_CASE("Can parse multiple tokens", "[lexer]")
         auto const input = first + second;
         CAPTURE(input, first_expected, second_expected);
 
-        shipwright::detail::lexer lex{input};
+        lexer lex{input};
 
-        REQUIRE(lex.advance());
-        auto const first_r = lex.read();
+        auto begin = lex.begin();
+        auto const end = lex.end();
+
+        REQUIRE(begin != end);
+        auto const first_r = *begin;
 
         CHECK(first_r == first_expected);
 
-        REQUIRE(lex.advance());
-        auto const second_r = lex.read();
+        ++begin;
+        REQUIRE(begin != end);
+        auto const second_r = *begin;
 
         CHECK(second_r == second_expected);
 
-        REQUIRE_FALSE(lex.advance());
+        ++begin;
+        REQUIRE(begin == end);
     }
 }
 
@@ -168,12 +187,9 @@ TEST_CASE("Can parse variable references", "[lexer]")
 
     CAPTURE(input);
 
-    shipwright::detail::lexer lex{input};
+    lexer lex{input};
 
-    std::vector<token> result;
-    while (lex.advance()) {
-        result.push_back(lex.read());
-    }
+    std::vector<token> result{lex.begin(), lex.end()};
 
     CHECK(result == expected);
 }
@@ -254,12 +270,9 @@ TEST_CASE("Can parse quoted arguments", "[lexer]")
 
     CAPTURE(input);
 
-    shipwright::detail::lexer lex{input};
+    lexer lex{input};
 
-    std::vector<token> result;
-    while (lex.advance()) {
-        result.push_back(lex.read());
-    }
+    std::vector<token> result{lex.begin(), lex.end()};
 
     CHECK(result == expected);
 }

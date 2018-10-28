@@ -16,9 +16,9 @@ int main()
         std::ostringstream{} << std::cin.rdbuf())
                            .str();
 
-    shipwright::detail::lexer lex{input};
+    shipwright::lexer lex{input};
 
-    while (lex.advance()) {
-        std::cout << shipwright::debug_print(lex.read()) << '\n';
+    for (auto const& token : lex) {
+        std::cout << shipwright::debug_print(token) << '\n';
     }
 }

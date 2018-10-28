@@ -6,4 +6,4 @@
 
 #pragma once
 
-#include <shipwright/detail/lexer.hpp>
+#include <shipwright/lexer/lexer.hpp>

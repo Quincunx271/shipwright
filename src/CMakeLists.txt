@@ -13,7 +13,7 @@ glob_mixed(RECURSE CONFIGURE_DEPENDS
   TEST_GLOB "shipwright/*.test.cpp"
 )
 
-flex_target(shipwright.lex shipwright/detail/lexer.l "${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp")
+flex_target(shipwright.lex shipwright/lexer/lexer.l "${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp")
 
 set_source_files_properties(${FLEX_shipwright.lex_OUTPUTS}
   PROPERTIES

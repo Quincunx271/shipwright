@@ -6,9 +6,11 @@
 
 %{
 #include <cstddef>
+#include <iterator>
+#include <optional>
 #include <utility>
 
-#include <shipwright/detail/lexer.hpp>
+#include <shipwright/lexer/lexer.hpp>
 
 struct shipwright_cmake_lexer_impl_extra_vars
 {
@@ -244,7 +246,7 @@ namespace {
         };
     }
 
-    shipwright::token read_token(
+    shipwright::token extract_token(
         std::string_view input,
         shipwright_cmake_lexer_impl_extra_vars const& extra)
     {
@@ -254,23 +256,27 @@ namespace {
             input.substr(extra.full_current_position, extra.full_token_length),
         };
     }
+
+    std::optional<shipwright::token>
+    read_token(std::string_view input, void* lexer)
+    {
+        bool success = yylex(lexer) != 0;
+        if (!success) return std::nullopt;
+
+        auto const extra = yyget_extra(lexer);
+        return ::extract_token(input, extra);
+    }
 }
 
-namespace shipwright::detail {
+namespace shipwright {
     lexer::lexer(std::string_view input)
         : input_{input}
     {
         yylex_init(&lexer_);
-        yy_scan_bytes(input.data(), input.size(), lexer_);
+        yy_scan_bytes(input_.data(), input_.size(), lexer_);
 
-        lookahead_result_ = yylex(lexer_) != 0;
-
-        auto const extra = yyget_extra(lexer_);
-        lookahead_token_ = token{
-            input_.substr(extra.current_position, extra.token_length),
-            extra.type,
-            input_.substr(extra.full_current_position, extra.full_token_length),
-        };
+        lookahead_token_ = ::read_token(input_, lexer_);
+        advance();
     }
 
     lexer::~lexer()
@@ -279,39 +285,34 @@ namespace shipwright::detail {
         lexer_ = nullptr;
     }
 
-    bool lexer::advance()
+    void lexer::advance()
     {
-        if (!lookahead_result_) return lookahead_result_;
+        current_token_ =
+            std::exchange(lookahead_token_, ::read_token(input_, lexer_));
 
-        current_token_ = std::move(lookahead_token_);
-
-        auto const result = std::exchange(lookahead_result_, yylex(lexer_) != 0);
-        if (!lookahead_result_) return result;
-
-        auto extra = yyget_extra(lexer_);
-
-        lookahead_token_ = ::read_token(input_, extra);
-
-        while (lookahead_token_.type == current_token_.type
-                && (current_token_.type == token_type::variable_reference_piece
-                    || current_token_.type == token_type::quoted_piece)) {
-            ::join_token(current_token_, lookahead_token_);
-
-            lookahead_result_ = yylex(lexer_) != 0;
-            if (!lookahead_result_) {
-                return lookahead_result_;
-            }
-
-            extra = yyget_extra(lexer_);
-
-            lookahead_token_ = ::read_token(input_, extra);
+        if (!lookahead_token_) {
+            return;
         }
 
-        return result;
+        while (lookahead_token_->type == current_token_->type
+                && (current_token_->type == token_type::variable_reference_piece
+                    || current_token_->type == token_type::quoted_piece)) {
+            ::join_token(*current_token_, *lookahead_token_);
+
+            lookahead_token_ = ::read_token(input_, lexer_);
+            if (!lookahead_token_) {
+                return;
+            }
+        }
     }
 
-    token lexer::read() const
+    bool lexer::has_next() const
     {
-        return current_token_;
+        return current_token_.has_value();
+    }
+
+    token const& lexer::read() const
+    {
+        return *current_token_;
     }
 }

@@ -4,6 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#include "./lexer.hpp"
+#pragma once
 
-// Note: implementation in the lexer.l file
+#include <shipwright/lexer/lexer.hpp>
+#include <shipwright/token.test.hpp>
