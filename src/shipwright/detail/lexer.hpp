@@ -8,19 +8,22 @@
 
 #include <string_view>
 
+#include <shipwright/token.hpp>
+
 namespace shipwright::detail {
     class lexer
     {
     public:
-        lexer();
+        explicit lexer(std::string_view text);
         lexer(lexer const&) = delete;
         ~lexer();
 
         bool advance();
 
-        std::string_view read() const;
+        token read() const;
 
     private:
         void* lexer_ = nullptr;
+        std::string_view input_;
     };
 }

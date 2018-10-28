@@ -5,15 +5,32 @@
  */
 
 %{
+#include <cstddef>
+#include <utility>
+
 #include <shipwright/detail/lexer.hpp>
 
-#include <iostream>
+struct shipwright_cmake_lexer_impl_extra_vars
+{
+    std::size_t current_pos = 0;
+    std::size_t last_pos = 0;
+
+    shipwright::token_type type = shipwright::token_type::unknown;
+
+    void increment_pos(std::size_t offset) {
+        last_pos = std::exchange(current_pos, current_pos + offset);
+    }
+};
+
+#define YY_USER_ACTION do {                                \
+        yyextra.increment_pos(yyleng);                     \
+        yyextra.type = shipwright::token_type::unknown;    \
+    } while (false);
 %}
 
 %option reentrant
+%option extra-type="shipwright_cmake_lexer_impl_extra_vars"
 %option prefix="shipwright_cmake_lexer_impl"
-
-%option yylineno
 %option noyywrap
 %pointer
 
@@ -22,14 +39,29 @@ identifier [A-Za-z_][A-Za-z0-9_]*
 
 %%
 
-{identifier} std::cout << yytext << '\n';
+\n {
+    yyextra.type = shipwright::token_type::newline;
+    return 1;
+}
+
+{space} {
+    yyextra.type = shipwright::token_type::space;
+    return 1;
+}
+
+{identifier} {
+    yyextra.type = shipwright::token_type::identifier;
+    return 1;
+}
 
 %%
 
 namespace shipwright::detail {
-    lexer::lexer()
+    lexer::lexer(std::string_view input)
+        : input_{input}
     {
         yylex_init(&lexer_);
+        yy_scan_bytes(input.data(), input.size(), lexer_);
     }
 
     lexer::~lexer()
@@ -40,11 +72,16 @@ namespace shipwright::detail {
 
     bool lexer::advance()
     {
-        yylex(lexer_);
+        return yylex(lexer_) != 0;
     }
 
-    std::string_view lexer::read() const
+    token lexer::read() const
     {
-        return yyget_text(lexer_);
+        auto const extra = yyget_extra(lexer_);
+
+        return token{
+            input_.substr(extra.last_pos, extra.current_pos - extra.last_pos),
+            extra.type,
+        };
     }
 }

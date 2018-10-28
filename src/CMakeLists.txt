@@ -15,6 +15,12 @@ glob_mixed(RECURSE CONFIGURE_DEPENDS
 
 flex_target(shipwright.lex shipwright/detail/lexer.l "${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp")
 
+set_source_files_properties(${FLEX_shipwright.lex_OUTPUTS}
+  PROPERTIES
+    COMPILE_OPTIONS
+      # Flex generates some unused functions
+      $<$<CXX_COMPILER_ID:GNU>:-Wno-unused-function>
+)
 add_library(shipwright
   ${sources}
   ${FLEX_shipwright.lex_OUTPUTS}

@@ -12,9 +12,13 @@
 
 int main()
 {
-    shipwright::detail::lexer lex;
+    auto const input = static_cast<std::ostringstream&>(
+        std::ostringstream{} << std::cin.rdbuf())
+                           .str();
+
+    shipwright::detail::lexer lex{input};
 
     while (lex.advance()) {
-        lex.read();
+        std::cout << shipwright::debug_print(lex.read()) << '\n';
     }
 }
