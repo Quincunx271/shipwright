@@ -8,34 +8,35 @@
 
 #include <cassert>
 #include <ostream>
+#include <string_view>
+
+#include <frozen/map.h>
+
+using shipwright::token_type;
+
+namespace {
+    constexpr auto type_stringify
+        = frozen::make_map<token_type, std::string_view>({
+            {token_type::unknown, "unknown"},
+            {token_type::space, "space"},
+            {token_type::newline, "newline"},
+            {token_type::identifier, "identifier"},
+            {token_type::lparen, "lparen"},
+            {token_type::rparen, "rparen"},
+            {token_type::bracket_argument, "bracket_argument"},
+            {token_type::bracket_comment, "bracket_comment"},
+            {token_type::line_comment, "line_comment"},
+        });
+}
 
 namespace shipwright {
     std::ostream& operator<<(
         std::ostream& lhs, debug_print<token_type> const& rhs)
     {
-        switch (rhs.value) {
-        case token_type::unknown:
-            return lhs << "unknown";
-        case token_type::space:
-            return lhs << "space";
-        case token_type::newline:
-            return lhs << "newline";
-        case token_type::identifier:
-            return lhs << "identifier";
-        case token_type::lparen:
-            return lhs << "lparen";
-        case token_type::rparen:
-            return lhs << "rparen";
-        case token_type::bracket_argument:
-            return lhs << "bracket_argument";
-        case token_type::bracket_comment:
-            return lhs << "bracket_comment";
-        case token_type::line_comment:
-            return lhs << "line_comment";
-        default:
-            assert(false && "Unknown token type");
-            return lhs << "<<invalid-type>>";
-        }
+        auto const lookup = type_stringify.find(rhs.value);
+        assert(lookup != type_stringify.end());
+
+        return lhs << lookup->second;
     }
 
     std::ostream& operator<<(std::ostream& lhs, debug_print<token> const& rhs)

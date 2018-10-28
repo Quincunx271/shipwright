@@ -53,12 +53,9 @@ struct shipwright_cmake_lexer_impl_extra_vars
 %x BRACKET
 %x BRACKET_CLOSE
 
-space [ \t]+
-identifier [A-Za-z_][A-Za-z0-9_]*
-
 %%
 
-{space} {
+[ \t]+ {
     yyextra.increment_position(yyleng);
     yyextra.type = shipwright::token_type::space;
     return 1;
@@ -70,7 +67,7 @@ identifier [A-Za-z_][A-Za-z0-9_]*
     return 1;
 }
 
-{identifier} {
+[A-Za-z_][A-Za-z0-9_]* {
     yyextra.increment_position(yyleng);
     yyextra.type = shipwright::token_type::identifier;
     return 1;
@@ -139,6 +136,11 @@ identifier [A-Za-z_][A-Za-z0-9_]*
         yyextra.full_token_length += yyleng;
         BEGIN(BRACKET);
     }
+}
+
+<BRACKET_CLOSE>. {
+    yyextra.full_token_length += yyleng;
+    BEGIN(BRACKET);
 }
 
 %%

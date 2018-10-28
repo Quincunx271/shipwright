@@ -2,3 +2,4 @@
 catch2/[~=2.4.1]@bincrafters/stable
 bison/[~=3.0.4]@bincrafters/stable
 flex/[~=2.6.4]@bincrafters/stable
+frozen/20181020@bincrafters/stable

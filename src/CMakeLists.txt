@@ -36,6 +36,7 @@ target_include_directories(shipwright
 target_link_libraries(shipwright
   PRIVATE
     ${FLEX_LIBRARIES}
+    frozen::frozen
 )
 
 add_executable(shipwright.lexer lexer.main.cpp)

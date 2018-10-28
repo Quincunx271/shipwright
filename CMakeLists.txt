@@ -40,6 +40,7 @@ endif()
 include(pmm.cmake)
 pmm(CONAN)
 
+find_package(frozen REQUIRED)
 find_package(FLEX 2.6.4 REQUIRED)
 find_package(BISON 3.0.4 REQUIRED)
 
