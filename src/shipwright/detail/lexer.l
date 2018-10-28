@@ -29,12 +29,17 @@ struct shipwright_cmake_lexer_impl_extra_vars
         token_length = submatch_length;
     }
 
-    void increment_position(std::size_t length) {
-        current_position += token_length;
-        token_length = length;
+    void extend_match(std::size_t length) {
+        token_length += length;
+        full_token_length += length;
+    }
 
+    void increment_position(std::size_t length) {
         full_current_position += full_token_length;
         full_token_length = length;
+
+        current_position = full_current_position;
+        token_length = length;
     }
 };
 %}
@@ -44,6 +49,9 @@ struct shipwright_cmake_lexer_impl_extra_vars
 %option prefix="shipwright_cmake_lexer_impl"
 %option noyywrap
 %pointer
+%x LINE_COMMENT
+%x BRACKET
+%x BRACKET_CLOSE
 
 space [ \t]+
 identifier [A-Za-z_][A-Za-z0-9_]*
@@ -80,10 +88,57 @@ identifier [A-Za-z_][A-Za-z0-9_]*
     return 1;
 }
 
-#.* {
+# {
+    // Split in two to lower the precedence of this match
     yyextra.update_position(yyleng, 1, yyleng - 1);
     yyextra.type = shipwright::token_type::line_comment;
+    BEGIN(LINE_COMMENT);
+}
+
+<LINE_COMMENT>.* {
+    yyextra.extend_match(yyleng);
+    BEGIN(INITIAL);
     return 1;
+}
+
+#?\[=*\[ {
+    bool const is_comment = yytext[0] == '#';
+
+    yyextra.increment_position(0);
+    yyextra.type = is_comment ? shipwright::token_type::bracket_comment
+                              : shipwright::token_type::bracket_argument;
+    yyextra.bracket_count = yyleng - 2;
+    if (is_comment) yyextra.bracket_count -= 1;
+
+    yyextra.full_token_length += yyleng;
+    yyextra.current_position += yyleng;
+    BEGIN(BRACKET);
+}
+
+<BRACKET>\] {
+    yyextra.full_token_length += yyleng;
+    BEGIN(BRACKET_CLOSE);
+}
+
+<BRACKET>[^\]]* {
+    yyextra.full_token_length += yyleng;
+}
+
+<BRACKET_CLOSE>=*\] {
+    if (yyextra.bracket_count == static_cast<std::size_t>(yyleng - 1)) {
+        yyextra.full_token_length += yyleng;
+        yyextra.token_length = yyextra.full_token_length
+            // Subtract the bracket_open
+            - (yyextra.current_position - yyextra.full_current_position)
+            // Subtract the bracket_close
+            - yyleng - 1;
+
+        BEGIN(INITIAL);
+        return 1;
+    } else {
+        yyextra.full_token_length += yyleng;
+        BEGIN(BRACKET);
+    }
 }
 
 %%

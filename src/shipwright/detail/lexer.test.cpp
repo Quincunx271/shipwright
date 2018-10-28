@@ -29,7 +29,24 @@ TEST_CASE("Can parse individual tokens", "[lexer]")
         {")", token{")", token_type::rparen, ")"}},
         {"# some comment",
             token{" some comment", token_type::line_comment, "# some comment"}},
+        {"[[some bracket argument]]",
+            token{"some bracket argument", token_type::bracket_argument,
+                "[[some bracket argument]]"}},
+        {"[=[some bracket argument]=]",
+            token{"some bracket argument", token_type::bracket_argument,
+                "[=[some bracket argument]=]"}},
+        {"[==[some bracket ]=] argument]==]",
+            token{"some bracket ]=] argument", token_type::bracket_argument,
+                "[==[some bracket ]=] argument]==]"}},
+        {"[=[some bracket\n argument]=]",
+            token{"some bracket\n argument", token_type::bracket_argument,
+                "[=[some bracket\n argument]=]"}},
+        {"#[=[some bracket\n comment]=]",
+            token{"some bracket\n comment", token_type::bracket_comment,
+                "#[=[some bracket\n comment]=]"}},
     }));
+
+    CAPTURE(input, expected);
 
     shipwright::detail::lexer lex{input};
 
@@ -55,20 +72,39 @@ TEST_CASE("Can parse multiple tokens", "[lexer]")
         {
             "# some comment",
             token{" some comment", token_type::line_comment, "# some comment"},
-            std::set{token_type::space, token_type::lparen, token_type::rparen,
-                token_type::line_comment},
+            std::set{
+                token_type::space,
+                token_type::lparen,
+                token_type::rparen,
+                token_type::line_comment,
+                token_type::bracket_argument,
+                token_type::bracket_comment,
+            },
+        },
+        {
+            "[=[some bracket\n argument]=]",
+            token{"some bracket\n argument", token_type::bracket_argument,
+                "[=[some bracket\n argument]=]"},
+            {},
+        },
+        {
+            "#[=[some bracket\n comment]=]",
+            token{"some bracket\n comment", token_type::bracket_comment,
+                "#[=[some bracket\n comment]=]"},
+            {},
         },
     };
 
-    auto [first, first_expected, consumes_succeeding]
+    auto [first, first_expected, ignore_succeeding]
         = GENERATE(values(test_values));
     auto [second, second_expected, ignore] = GENERATE(values(test_values));
     (void)ignore;
 
-    if (consumes_succeeding.count(second_expected.type)) {
+    if (ignore_succeeding.count(second_expected.type)) {
         SUCCEED();
     } else {
         auto const input = first + second;
+        CAPTURE(input, first_expected, second_expected);
 
         shipwright::detail::lexer lex{input};
 
