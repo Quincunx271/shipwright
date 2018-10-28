@@ -24,6 +24,10 @@ namespace shipwright::detail {
 
     private:
         void* lexer_ = nullptr;
+        token current_token_ = {};
+        token lookahead_token_ = {};
+        bool lookahead_result_ = true;
+
         std::string_view input_;
     };
 }

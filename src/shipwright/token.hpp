@@ -24,7 +24,12 @@ namespace shipwright {
 
         bracket_argument,
 
-        // quote,
+        quote,
+        quoted_piece,
+
+        variable_reference_open,
+        variable_reference_piece,
+        variable_reference_close,
 
         // escape sequences
 

@@ -24,6 +24,11 @@ namespace {
             {token_type::lparen, "lparen"},
             {token_type::rparen, "rparen"},
             {token_type::bracket_argument, "bracket_argument"},
+            {token_type::quote, "quote"},
+            {token_type::quoted_piece, "quoted_piece"},
+            {token_type::variable_reference_open, "variable_reference_open"},
+            {token_type::variable_reference_piece, "variable_reference_piece"},
+            {token_type::variable_reference_close, "variable_reference_close"},
             {token_type::bracket_comment, "bracket_comment"},
             {token_type::line_comment, "line_comment"},
         });
