@@ -59,7 +59,7 @@ if(BUILD_TESTING)
   include(Catch)
 
   catch_discover_tests(test.shipwright
-    EXTRA_ARGS $<$<BOOL:SHIPWRIGHT_TEST_COLOR>:--use-colour=yes>
+    EXTRA_ARGS $<$<BOOL:${SHIPWRIGHT_TEST_COLOR}>:--use-colour=yes>
   )
 endif()
 
