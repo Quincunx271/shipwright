@@ -22,6 +22,18 @@ namespace shipwright {
             return lhs << "newline";
         case token_type::identifier:
             return lhs << "identifier";
+        case token_type::lparen:
+            return lhs << "lparen";
+        case token_type::rparen:
+            return lhs << "rparen";
+        case token_type::lbracket:
+            return lhs << "lbracket";
+        case token_type::rbracket:
+            return lhs << "rbracket";
+        case token_type::bracket_comment:
+            return lhs << "bracket_comment";
+        case token_type::line_comment:
+            return lhs << "line_comment";
         default:
             assert(false && "Unknown token type");
             return lhs << "<<invalid-type>>";

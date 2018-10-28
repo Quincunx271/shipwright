@@ -39,18 +39,28 @@ identifier [A-Za-z_][A-Za-z0-9_]*
 
 %%
 
-\n {
-    yyextra.type = shipwright::token_type::newline;
-    return 1;
-}
-
 {space} {
     yyextra.type = shipwright::token_type::space;
     return 1;
 }
 
+\n {
+    yyextra.type = shipwright::token_type::newline;
+    return 1;
+}
+
 {identifier} {
     yyextra.type = shipwright::token_type::identifier;
+    return 1;
+}
+
+\( {
+    yyextra.type = shipwright::token_type::lparen;
+    return 1;
+}
+
+\) {
+    yyextra.type = shipwright::token_type::rparen;
     return 1;
 }
 

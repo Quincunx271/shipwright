@@ -7,6 +7,7 @@
 #pragma once
 
 #include <string_view>
+#include <tuple>
 #include <variant>
 
 #include <shipwright/debug_print.hpp>
@@ -18,6 +19,18 @@ namespace shipwright {
         space,
         newline,
         identifier,
+        lparen,
+        rparen,
+
+        lbracket,
+        rbracket,
+
+        // quote,
+
+        // escape sequences
+
+        bracket_comment,
+        line_comment,
     };
 
     std::ostream& operator<<(
@@ -28,6 +41,17 @@ namespace shipwright {
         std::string_view text;
         token_type type;
     };
+
+    inline bool operator==(token const& lhs, token const& rhs)
+    {
+        // Compare types first; that's the cheaper comparison
+        return std::tie(lhs.type, lhs.text) == std::tie(rhs.type, rhs.text);
+    }
+
+    inline bool operator!=(token const& lhs, token const& rhs)
+    {
+        return !(lhs == rhs);
+    }
 
     std::ostream& operator<<(std::ostream& lhs, debug_print<token> const& rhs);
 }

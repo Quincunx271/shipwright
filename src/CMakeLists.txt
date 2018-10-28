@@ -43,7 +43,7 @@ target_link_libraries(shipwright.lexer PRIVATE shipwright::shipwright)
 
 # Tests
 if(BUILD_TESTING)
-  find_package(Catch2 2.3.0 REQUIRED)
+  find_package(Catch2 2.4.0 REQUIRED)
 
   add_executable(test.shipwright
     catch_main.test.cpp
