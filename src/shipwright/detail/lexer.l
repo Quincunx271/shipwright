@@ -12,20 +12,31 @@
 
 struct shipwright_cmake_lexer_impl_extra_vars
 {
-    std::size_t current_pos = 0;
-    std::size_t last_pos = 0;
+    std::size_t current_position = 0;
+    std::size_t token_length = 0;
+
+    std::size_t full_current_position = 0;
+    std::size_t full_token_length = 0;
+
+    std::size_t bracket_count = 0;
 
     shipwright::token_type type = shipwright::token_type::unknown;
 
-    void increment_pos(std::size_t offset) {
-        last_pos = std::exchange(current_pos, current_pos + offset);
+    void update_position(std::size_t length, std::size_t submatch_offset,
+                         std::size_t submatch_length) {
+        increment_position(length);
+        current_position += submatch_offset;
+        token_length = submatch_length;
+    }
+
+    void increment_position(std::size_t length) {
+        current_position += token_length;
+        token_length = length;
+
+        full_current_position += full_token_length;
+        full_token_length = length;
     }
 };
-
-#define YY_USER_ACTION do {                                \
-        yyextra.increment_pos(yyleng);                     \
-        yyextra.type = shipwright::token_type::unknown;    \
-    } while (false);
 %}
 
 %option reentrant
@@ -40,31 +51,37 @@ identifier [A-Za-z_][A-Za-z0-9_]*
 %%
 
 {space} {
+    yyextra.increment_position(yyleng);
     yyextra.type = shipwright::token_type::space;
     return 1;
 }
 
 \n {
+    yyextra.increment_position(yyleng);
     yyextra.type = shipwright::token_type::newline;
     return 1;
 }
 
 {identifier} {
+    yyextra.increment_position(yyleng);
     yyextra.type = shipwright::token_type::identifier;
     return 1;
 }
 
 \( {
+    yyextra.increment_position(yyleng);
     yyextra.type = shipwright::token_type::lparen;
     return 1;
 }
 
 \) {
+    yyextra.increment_position(yyleng);
     yyextra.type = shipwright::token_type::rparen;
     return 1;
 }
 
 #.* {
+    yyextra.update_position(yyleng, 1, yyleng - 1);
     yyextra.type = shipwright::token_type::line_comment;
     return 1;
 }
@@ -95,8 +112,9 @@ namespace shipwright::detail {
         auto const extra = yyget_extra(lexer_);
 
         return token{
-            input_.substr(extra.last_pos, extra.current_pos - extra.last_pos),
+            input_.substr(extra.current_position, extra.token_length),
             extra.type,
+            input_.substr(extra.full_current_position, extra.full_token_length),
         };
     }
 }

@@ -21,13 +21,14 @@ TEST_CASE("Can parse individual tokens", "[lexer]")
     using shipwright::token_type;
 
     auto [input, expected] = GENERATE(table<std::string, token>({
-        {" ", token{" ", token_type::space}},
-        {"\t", token{"\t", token_type::space}},
-        {"\t \t", token{"\t \t", token_type::space}},
-        {"\n", token{"\n", token_type::newline}},
-        {"(", token{"(", token_type::lparen}},
-        {")", token{")", token_type::rparen}},
-        {"# some comment", token{"# some comment", token_type::line_comment}},
+        {" ", token{" ", token_type::space, " "}},
+        {"\t", token{"\t", token_type::space, "\t"}},
+        {"\t \t", token{"\t \t", token_type::space, "\t \t"}},
+        {"\n", token{"\n", token_type::newline, "\n"}},
+        {"(", token{"(", token_type::lparen, "("}},
+        {")", token{")", token_type::rparen, ")"}},
+        {"# some comment",
+            token{" some comment", token_type::line_comment, "# some comment"}},
     }));
 
     shipwright::detail::lexer lex{input};
@@ -47,13 +48,13 @@ TEST_CASE("Can parse multiple tokens", "[lexer]")
 
     static auto const test_values = std::initializer_list<
         std::tuple<std::string, token, std::set<token_type>>>{
-        {" ", token{" ", token_type::space}, std::set{token_type::space}},
-        {"\n", token{"\n", token_type::newline}, {}},
-        {"(", token{"(", token_type::lparen}, {}},
-        {")", token{")", token_type::rparen}, {}},
+        {" ", token{" ", token_type::space, " "}, std::set{token_type::space}},
+        {"\n", token{"\n", token_type::newline, "\n"}, {}},
+        {"(", token{"(", token_type::lparen, "("}, {}},
+        {")", token{")", token_type::rparen, ")"}, {}},
         {
             "# some comment",
-            token{"# some comment", token_type::line_comment},
+            token{" some comment", token_type::line_comment, "# some comment"},
             std::set{token_type::space, token_type::lparen, token_type::rparen,
                 token_type::line_comment},
         },

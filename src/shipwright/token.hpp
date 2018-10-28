@@ -24,6 +24,7 @@ namespace shipwright {
 
         lbracket,
         rbracket,
+        bracket_argument,
 
         // quote,
 
@@ -40,6 +41,8 @@ namespace shipwright {
     {
         std::string_view text;
         token_type type;
+        // Not salient. Always determinable from `text` and `type`.
+        std::string_view full_text;
     };
 
     inline bool operator==(token const& lhs, token const& rhs)
