@@ -1,0 +1,24 @@
+version: 0.0.1+{build}
+
+image: Visual Studio 2017
+
+shallow_clone: true
+
+install:
+  - cmake --version
+  - pip install conan
+  - conan --version
+  - conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+
+before_build:
+  - mkdir build
+  - cd build
+  - cmake -G "Visual Studio 15 2017" -A x64
+    -DCMAKE_CXX_FLAGS_INIT="/WX"
+    ..
+
+build_script:
+  - cmake --build . -j
+
+test_script:
+  - ctest --output-on-failure -C Debug
