@@ -1,0 +1,113 @@
+dist: trusty
+sudo: false
+language: cpp
+
+matrix:
+  include:
+    - os: linux
+      compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-6.0
+          packages:
+            - g++-8 # Gets newer version of libstdc++
+            - clang-6.0
+      env:
+        - C_COMPILER='clang-6.0'
+        - CXX_COMPILER='clang++-6.0'
+        - BUILD_TYPE=Debug
+        - NEEDS_EXPLICIT_FLEX=yes
+
+    - os: linux
+      compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-7
+          packages:
+            - g++-8 # Gets newer version of libstdc++
+            - clang-7
+      env:
+        - C_COMPILER='clang-7'
+        - CXX_COMPILER='clang++-7'
+        - BUILD_TYPE=Debug
+
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+      env:
+        - C_COMPILER='gcc-7'
+        - CXX_COMPILER='g++-7'
+        - BUILD_TYPE=Debug
+
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-8
+      env:
+        - C_COMPILER='gcc-8'
+        - CXX_COMPILER='g++-8'
+        - BUILD_TYPE=Debug
+
+    - os: osx
+      osx_image: xcode10
+      env:
+        - C_COMPILER=clang
+        - CXX_COMPILER=clang++
+        - PATH=$PATH:$HOME/Library/Python/3.7/bin
+        - BUILD_TYPE=Debug
+
+before_install:
+  - export PYENV_VERSION=3.6
+  - export CC=$C_COMPILER
+  - export CXX=$CXX_COMPILER
+
+install:
+  # Install newer cmake
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      brew update
+      brew upgrade cmake
+    fi
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      travis_retry wget https://cmake.org/files/v3.12/cmake-3.12.3-Linux-x86_64.sh
+      sh ./cmake-3.12.3-Linux-x86_64.sh --prefix=$HOME --skip-license
+    fi
+  - cmake --version
+  # Install conan (Travis specific; PMM would normally handle this)
+  - pip3 install conan --user
+  - conan --version
+  - conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+  # Install flex explicitly if required
+  - |
+    if [[ "$NEEDS_EXPLICIT_FLEX" == "yes" ]]; then
+      CC=$(which gcc-8) CXX=$(which g++-8) conan install flex/2.6.4@bincrafters/stable
+      export FLEX_EXECUTABLE=$(conan info flex/2.6.4@bincrafters/stable --paths | grep package_folder | sed 's/\s*package_folder:\s*//')/bin/flex
+    fi
+
+before_script:
+  # Configure, which would install dependencies via PMM
+  - mkdir build && cd build
+  - cmake ..
+    -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+    -DCMAKE_CXX_COMPILER=$CXX_COMPILER
+    -DCMAKE_C_COMPILER=$C_COMPILER
+    -DCMAKE_CXX_FLAGS_INIT=-Werror
+    ${FLEX_EXECUTABLE:+-DFLEX_EXECUTABLE=$FLEX_EXECUTABLE}
+
+script:
+  - cmake --build . -j
+  - ctest --output-on-failure
