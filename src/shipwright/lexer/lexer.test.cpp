@@ -9,6 +9,7 @@
 #include <shipwright/token.test.hpp>
 
 #include <catch2/catch.hpp>
+#include <shipwright/test/each.test.hpp>
 
 #include <initializer_list>
 #include <set>
@@ -79,41 +80,44 @@ TEST_CASE("Can parse individual tokens", "[lexer]")
 
 TEST_CASE("Can parse multiple tokens", "[lexer]")
 {
-    static auto const test_values = std::initializer_list<
-        std::tuple<std::string, token, std::set<token_type>>>{
-        {" ", token{" ", token_type::space, " "}, std::set{token_type::space}},
-        {"\n", token{"", token_type::newline, "\n"}, {}},
-        {"(", token{"", token_type::lparen, "("}, {}},
-        {")", token{"", token_type::rparen, ")"}, {}},
-        {
-            "# some comment",
-            token{" some comment", token_type::line_comment, "# some comment"},
-            std::set{
-                token_type::space,
-                token_type::lparen,
-                token_type::rparen,
-                token_type::line_comment,
-                token_type::bracket_argument,
-                token_type::bracket_comment,
+    static auto const test_values
+        = std::vector<std::tuple<std::string, token, std::set<token_type>>>({
+            {" ", token{" ", token_type::space, " "},
+                std::set{token_type::space}},
+            {"\n", token{"", token_type::newline, "\n"}, {}},
+            {"(", token{"", token_type::lparen, "("}, {}},
+            {")", token{"", token_type::rparen, ")"}, {}},
+            {
+                "# some comment",
+                token{" some comment", token_type::line_comment,
+                    "# some comment"},
+                std::set{
+                    token_type::space,
+                    token_type::lparen,
+                    token_type::rparen,
+                    token_type::line_comment,
+                    token_type::bracket_argument,
+                    token_type::bracket_comment,
+                },
             },
-        },
-        {
-            "[=[some bracket\n argument]=]",
-            token{"some bracket\n argument", token_type::bracket_argument,
-                "[=[some bracket\n argument]=]"},
-            {},
-        },
-        {
-            "#[=[some bracket\n comment]=]",
-            token{"some bracket\n comment", token_type::bracket_comment,
-                "#[=[some bracket\n comment]=]"},
-            {},
-        },
-    };
+            {
+                "[=[some bracket\n argument]=]",
+                token{"some bracket\n argument", token_type::bracket_argument,
+                    "[=[some bracket\n argument]=]"},
+                {},
+            },
+            {
+                "#[=[some bracket\n comment]=]",
+                token{"some bracket\n comment", token_type::bracket_comment,
+                    "#[=[some bracket\n comment]=]"},
+                {},
+            },
+        });
 
     auto [first, first_expected, ignore_succeeding]
-        = GENERATE(values(test_values));
-    auto [second, second_expected, ignore] = GENERATE(values(test_values));
+        = GENERATE(shipwright::test::each(test_values));
+    auto [second, second_expected, ignore]
+        = GENERATE(shipwright::test::each(test_values));
     (void)ignore;
 
     if (ignore_succeeding.count(second_expected.type)) {
