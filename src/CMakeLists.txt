@@ -19,6 +19,7 @@ set_property(SOURCE ${FLEX_shipwright.lex_OUTPUTS}
   PROPERTY COMPILE_OPTIONS
     # Flex generates some unused functions
     $<$<CXX_COMPILER_ID:GNU>:-Wno-unused-function>
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-unused-function>
     # Flex redefines macros
     $<$<CXX_COMPILER_ID:MSVC>:/wd4005>
 )
