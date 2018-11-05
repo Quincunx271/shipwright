@@ -22,10 +22,8 @@ struct shipwright_cmake_lexer_impl_extra_vars
     std::size_t full_current_position = 0;
     std::size_t full_token_length = 0;
 
-    union {
-        std::size_t bracket_count;
-        std::size_t variable_reference_depth;
-    };
+    std::size_t bracket_count = 0;
+    std::size_t variable_reference_depth = 0;
 
     shipwright::token_type type = shipwright::token_type::unknown;
 
