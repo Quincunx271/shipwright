@@ -280,3 +280,34 @@ TEST_CASE("Can parse quoted arguments", "[lexer]")
 
     CHECK(result == expected);
 }
+
+TEST_CASE("Can parse unquoted arguments without legacy", "[lexer]")
+{
+    auto [input, expected] = GENERATE(table<std::string, token>({
+        {
+            "some-unquoted.ar\\gument",
+            token{"some-unquoted.ar\\gument", token_type::unquoted_argument,
+                "some-unquoted.ar\\gument"},
+        },
+        {"\\a", token{"\\a", token_type::unquoted_argument, "\\a"}},
+        {"&", token{"&", token_type::unquoted_argument, "&"}},
+        {"$abc", token{"$abc", token_type::unquoted_argument, "$abc"}},
+        {"[=abc[=", token{"[=abc[=", token_type::unquoted_argument, "[=abc[="}},
+        {
+            "~`!1@23$4%5^6&7*890_-+=QqWwEeRrTtYyUuIiOoPp{[}]|"
+            "AaSsDdFfGgHhJjKkLl:;'ZzXxCcVvBbNnMm<,>.?/",
+            token{"~`!1@23$4%5^6&7*890_-+=QqWwEeRrTtYyUuIiOoPp{[}]|"
+                  "AaSsDdFfGgHhJjKkLl:;'ZzXxCcVvBbNnMm<,>.?/",
+                token_type::unquoted_argument,
+                "~`!1@23$4%5^6&7*890_-+=QqWwEeRrTtYyUuIiOoPp{[}]|"
+                "AaSsDdFfGgHhJjKkLl:;'ZzXxCcVvBbNnMm<,>.?/"},
+        },
+    }));
+
+    CAPTURE(input);
+
+    lexer lex{input};
+
+    std::vector<token> result{lex.begin(), lex.end()};
+    CHECK(result == std::vector<token>{expected});
+}

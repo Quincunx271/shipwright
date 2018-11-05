@@ -27,6 +27,8 @@ namespace shipwright {
         quote,
         quoted_piece,
 
+        unquoted_argument,
+
         variable_reference_open,
         variable_reference_piece,
         variable_reference_close,

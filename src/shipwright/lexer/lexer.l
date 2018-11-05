@@ -68,6 +68,7 @@ struct shipwright_cmake_lexer_impl_extra_vars
 %x BRACKET_CLOSE
 %x QUOTE
 %x VARIABLE_REFERENCE
+%x UNQUOTED
 
 escape_identity \\[^A-Za-z0-9;]
 escape_encoded \\[trn]
@@ -76,6 +77,11 @@ escape_sequence {escape_identity}|{escape_encoded}|{escape_semicolon}
 
 quoted_continuation \\\n
 quoted_element {escape_sequence}|{quoted_continuation}
+
+unquoted_element_start_char [^()#"\ \t\n\r$[]
+unquoted_element_continue_char {unquoted_element_start_char}|\$|\[
+unquoted_element_start {unquoted_element_start_char}|{escape_sequence}
+unquoted_element_continue {unquoted_element_continue_char}|{escape_sequence}
 
 %%
 
@@ -167,6 +173,13 @@ quoted_element {escape_sequence}|{quoted_continuation}
     yyextra.increment_only_full_position(yyleng);
     yyextra.type = shipwright::token_type::quote;
     BEGIN(QUOTE);
+    return 1;
+}
+
+(\[=*[^=].*\[|\$[^{]|{unquoted_element_start}){unquoted_element_continue}* {
+    // First two exclude bracket_arguments and variable_references
+    yyextra.increment_position(yyleng);
+    yyextra.type = shipwright::token_type::unquoted_argument;
     return 1;
 }
 
