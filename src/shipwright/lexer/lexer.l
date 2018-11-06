@@ -108,6 +108,7 @@ struct shipwright_cmake_lexer_impl_extra_vars
 %option prefix="shipwright_cmake_lexer_impl"
 %option noyywrap
 %option never-interactive
+%option nounistd
 %pointer
 %x LINE_COMMENT
 %x BRACKET
