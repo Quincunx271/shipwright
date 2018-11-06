@@ -4,6 +4,48 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+
+/*
+Some sections of code are borrowed from the CMake source code itself.
+Copied segments will be delimited by comments with the following text:
+"Copied with modifications from Source/LexerParser/cmListFileLexer.in.l"
+"End of copied CMake source code"
+Following is CMake's license (BSD 3-Clause):
+
+--------------------------------------------------------------------------------
+
+CMake - Cross Platform Makefile Generator
+Copyright 2000-2018 Kitware, Inc. and Contributors
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+* Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution.
+
+* Neither the name of Kitware, Inc. nor the names of Contributors
+  may be used to endorse or promote products derived from this
+  software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 %{
 #include <cassert>
 #include <cstddef>
@@ -24,6 +66,7 @@ struct shipwright_cmake_lexer_impl_extra_vars
 
     std::size_t bracket_count = 0;
     std::size_t variable_reference_depth = 0;
+    std::size_t make_reference_depth = 0;
 
     shipwright::token_type type = shipwright::token_type::unknown;
 
@@ -61,14 +104,12 @@ struct shipwright_cmake_lexer_impl_extra_vars
 %option prefix="shipwright_cmake_lexer_impl"
 %option noyywrap
 %option never-interactive
-%option nounistd
 %pointer
 %x LINE_COMMENT
 %x BRACKET
 %x BRACKET_CLOSE
 %x QUOTE
 %x VARIABLE_REFERENCE
-%x UNQUOTED
 
 escape_identity \\[^A-Za-z0-9;]
 escape_encoded \\[trn]
@@ -78,10 +119,13 @@ escape_sequence {escape_identity}|{escape_encoded}|{escape_semicolon}
 quoted_continuation \\\n
 quoted_element {escape_sequence}|{quoted_continuation}
 
-unquoted_element_start_char [^()#"\ \t\n\r$[]
-unquoted_element_continue_char {unquoted_element_start_char}|\$|\[
-unquoted_element_start {unquoted_element_start_char}|{escape_sequence}
-unquoted_element_continue {unquoted_element_continue_char}|{escape_sequence}
+/* Copied with modifications from Source/LexerParser/cmListFileLexer.in.l */
+
+unquoted_makevar \$\([A-Za-z0-9_]*\)
+unquoted ([^ \0\t\r\n\(\)#\\\"[=]|{escape_sequence})
+unquoted_legacy {unquoted_makevar}|{unquoted}|\"({unquoted_makevar}|{unquoted}|[ \t[=])*\"
+
+/* End of copied CMake source code */
 
 %%
 
@@ -169,17 +213,34 @@ unquoted_element_continue {unquoted_element_continue_char}|{escape_sequence}
     BEGIN(BRACKET);
 }
 
+    /* Copied with modifications from Source/LexerParser/cmListFileLexer.in.l */
+({unquoted}|=|\[=*{unquoted})({unquoted}|[[=])* {
+    /* End of copied CMake source code */
+    yyextra.increment_position(yyleng);
+    yyextra.type = shipwright::token_type::unquoted_argument;
+    return 1;
+}
+
+    /* Copied with modifications from Source/LexerParser/cmListFileLexer.in.l */
+({unquoted_makevar}|{unquoted}|=|\[=*{unquoted_legacy})({unquoted_legacy}|[[=])* {
+    /* End of copied CMake source code */
+    yyextra.increment_position(yyleng);
+    yyextra.type = shipwright::token_type::unquoted_argument;
+    return 1;
+}
+
+    /* Copied with modifications from Source/LexerParser/cmListFileLexer.in.l */
+\[ {
+    /* End of copied CMake source code */
+    yyextra.increment_position(yyleng);
+    yyextra.type = shipwright::token_type::unquoted_argument;
+    return 1;
+}
+
 \" {
     yyextra.increment_only_full_position(yyleng);
     yyextra.type = shipwright::token_type::quote;
     BEGIN(QUOTE);
-    return 1;
-}
-
-(\[=*[^=].*\[|\$[^{]|{unquoted_element_start}){unquoted_element_continue}* {
-    // First two exclude bracket_arguments and variable_references
-    yyextra.increment_position(yyleng);
-    yyextra.type = shipwright::token_type::unquoted_argument;
     return 1;
 }
 
