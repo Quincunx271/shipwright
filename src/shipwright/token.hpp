@@ -23,15 +23,8 @@ namespace shipwright {
         rparen,
 
         bracket_argument,
-
-        quote,
-        quoted_piece,
-
+        quoted_argument,
         unquoted_argument,
-
-        variable_reference_open,
-        variable_reference_piece,
-        variable_reference_close,
 
         bracket_comment,
         line_comment,

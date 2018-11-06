@@ -58,7 +58,6 @@ TEST_CASE("Can parse individual tokens", "[lexer]")
         {"#[=[some bracket\n comment]=]",
             token{"some bracket\n comment", token_type::bracket_comment,
                 "#[=[some bracket\n comment]=]"}},
-        {"\"", token{"", token_type::quote, "\""}},
     }));
 
     CAPTURE(input, expected);
@@ -147,85 +146,29 @@ TEST_CASE("Can parse multiple tokens", "[lexer]")
     }
 }
 
-TEST_CASE("Can parse variable references", "[lexer]")
-{
-    auto [input, expected] = GENERATE(table<std::string, std::vector<token>>({
-        {
-            "${simple}",
-            {
-                token{"", token_type::variable_reference_open, "${"},
-                token{"simple", token_type::variable_reference_piece, "simple"},
-                token{"", token_type::variable_reference_close, "}"},
-            },
-        },
-        {
-            R"===(${/_.+-\ \$\}$\{\n$})===",
-            {
-                token{"", token_type::variable_reference_open, "${"},
-                token{R"===(/_.+-\ \$\}$\{\n$)===",
-                    token_type::variable_reference_piece,
-                    R"===(/_.+-\ \$\}$\{\n$)==="},
-                token{"", token_type::variable_reference_close, "}"},
-            },
-        },
-        {
-            "${variable_${nested_${reference}_expansion}}",
-            {
-                token{"", token_type::variable_reference_open, "${"},
-                token{"variable_", token_type::variable_reference_piece,
-                    "variable_"},
-                token{"", token_type::variable_reference_open, "${"},
-                token{
-                    "nested_", token_type::variable_reference_piece, "nested_"},
-                token{"", token_type::variable_reference_open, "${"},
-                token{"reference", token_type::variable_reference_piece,
-                    "reference"},
-                token{"", token_type::variable_reference_close, "}"},
-                token{"_expansion", token_type::variable_reference_piece,
-                    "_expansion"},
-                token{"", token_type::variable_reference_close, "}"},
-                token{"", token_type::variable_reference_close, "}"},
-            },
-        },
-    }));
-
-    CAPTURE(input);
-
-    lexer lex{input};
-
-    std::vector<token> result{lex.begin(), lex.end()};
-
-    CHECK(result == expected);
-}
-
 TEST_CASE("Can parse quoted arguments", "[lexer]")
 {
     auto [input, expected] = GENERATE(table<std::string, std::vector<token>>({
         {
             "\"some quote\"",
             {
-                token{"", token_type::quote, "\""},
-                token{"some quote", token_type::quoted_piece, "some quote"},
-                token{"", token_type::quote, "\""},
+                token{"some quote", token_type::quoted_argument,
+                    "\"some quote\""},
             },
         },
         {
             "\"some quote with a $ sign\"",
             {
-                token{"", token_type::quote, "\""},
-                token{"some quote with a $ sign", token_type::quoted_piece,
-                    "some quote with a $ sign"},
-                token{"", token_type::quote, "\""},
+                token{"some quote with a $ sign", token_type::quoted_argument,
+                    "\"some quote with a $ sign\""},
             },
         },
         {
             R"("some quote with \\ \" escape sequences")",
             {
-                token{"", token_type::quote, "\""},
                 token{R"(some quote with \\ \" escape sequences)",
-                    token_type::quoted_piece,
-                    R"(some quote with \\ \" escape sequences)"},
-                token{"", token_type::quote, "\""},
+                    token_type::quoted_argument,
+                    R"("some quote with \\ \" escape sequences")"},
             },
         },
         {
@@ -233,41 +176,32 @@ TEST_CASE("Can parse quoted arguments", "[lexer]")
             R"(\\\)"
             "\n quoted continuation\"",
             {
-                token{"", token_type::quote, "\""},
                 token{
                     "some quote with a"
                     R"(\\\)"
                     "\n quoted continuation",
-                    token_type::quoted_piece,
-                    "some quote with a"
+                    token_type::quoted_argument,
+                    "\"some quote with a"
                     R"(\\\)"
-                    "\n quoted continuation",
+                    "\n quoted continuation\"",
                 },
-                token{"", token_type::quote, "\""},
             },
         },
         {
             "\"${reference}\"",
             {
-                token{"", token_type::quote, "\""},
-                token{"", token_type::variable_reference_open, "${"},
-                token{"reference", token_type::variable_reference_piece,
-                    "reference"},
-                token{"", token_type::variable_reference_close, "}"},
-                token{"", token_type::quote, "\""},
+                token{"${reference}", token_type::quoted_argument,
+                    "\"${reference}\""},
             },
         },
         {
             "\"some quote ${with} a variable reference\"",
             {
-                token{"", token_type::quote, "\""},
-                token{"some quote ", token_type::quoted_piece, "some quote "},
-                token{"", token_type::variable_reference_open, "${"},
-                token{"with", token_type::variable_reference_piece, "with"},
-                token{"", token_type::variable_reference_close, "}"},
-                token{" a variable reference", token_type::quoted_piece,
-                    " a variable reference"},
-                token{"", token_type::quote, "\""},
+                token{
+                    "some quote ${with} a variable reference",
+                    token_type::quoted_argument,
+                    "\"some quote ${with} a variable reference\"",
+                },
             },
         },
     }));
@@ -310,6 +244,46 @@ TEST_CASE("Can parse unquoted arguments without legacy", "[lexer]")
 
     std::vector<token> result{lex.begin(), lex.end()};
     CHECK(result == std::vector<token>{expected});
+}
+
+TEST_CASE("Can parse variable references in unquoted arguments", "[lexer]")
+{
+    auto [input, expected] = GENERATE(table<std::string, std::vector<token>>({
+        {
+            "${simple}",
+            {
+                token{"${simple}", token_type::unquoted_argument, "${simple}"},
+            },
+        },
+        {
+            R"===(${/_.+-\ \$\}$\{\n$})===",
+            {
+                token{
+                    R"===(${/_.+-\ \$\}$\{\n$})===",
+                    token_type::unquoted_argument,
+                    R"===(${/_.+-\ \$\}$\{\n$})===",
+                },
+            },
+        },
+        {
+            "${variable_${nested_${reference}_expansion}}",
+            {
+                token{
+                    "${variable_${nested_${reference}_expansion}}",
+                    token_type::unquoted_argument,
+                    "${variable_${nested_${reference}_expansion}}",
+                },
+            },
+        },
+    }));
+
+    CAPTURE(input);
+
+    lexer lex{input};
+
+    std::vector<token> result{lex.begin(), lex.end()};
+
+    CHECK(result == expected);
 }
 
 TEST_CASE("Can parse legacy unquoted arguments", "[lexer]")

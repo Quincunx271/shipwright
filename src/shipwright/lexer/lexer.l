@@ -84,6 +84,10 @@ struct shipwright_cmake_lexer_impl_extra_vars
         full_token_length += length;
     }
 
+    void extend_full_match(std::size_t length) {
+        full_token_length += length;
+    }
+
     void increment_position(std::size_t length) {
         full_current_position += full_token_length;
         full_token_length = length;
@@ -109,7 +113,6 @@ struct shipwright_cmake_lexer_impl_extra_vars
 %x BRACKET
 %x BRACKET_CLOSE
 %x QUOTE
-%x VARIABLE_REFERENCE
 
 escape_identity \\[^A-Za-z0-9;]
 escape_encoded \\[trn]
@@ -117,7 +120,6 @@ escape_semicolon \\;
 escape_sequence {escape_identity}|{escape_encoded}|{escape_semicolon}
 
 quoted_continuation \\\n
-quoted_element {escape_sequence}|{quoted_continuation}
 
 /* Copied with modifications from Source/LexerParser/cmListFileLexer.in.l */
 
@@ -238,68 +240,21 @@ unquoted_legacy {unquoted_makevar}|{unquoted}|\"({unquoted_makevar}|{unquoted}|[
 }
 
 \" {
-    yyextra.increment_only_full_position(yyleng);
-    yyextra.type = shipwright::token_type::quote;
+    yyextra.increment_position(yyleng);
+    yyextra.current_position += yyleng;
+    yyextra.type = shipwright::token_type::quoted_argument;
     BEGIN(QUOTE);
-    return 1;
 }
 
 <QUOTE>\" {
-    yyextra.increment_only_full_position(yyleng);
-    yyextra.type = shipwright::token_type::quote;
+    yyextra.extend_full_match(yyleng);
+    yyextra.token_length -= yyleng;
     BEGIN(INITIAL);
     return 1;
 }
 
-<QUOTE>([^\\"$]|{escape_sequence}|{quoted_continuation})* {
-    yyextra.increment_position(yyleng);
-    yyextra.type = shipwright::token_type::quoted_piece;
-    return 1;
-}
-
-<QUOTE>\$ {
-    yyextra.increment_position(yyleng);
-    yyextra.type = shipwright::token_type::quoted_piece;
-    return 1;
-}
-
-<INITIAL,QUOTE,VARIABLE_REFERENCE>\$\{ {
-    yyextra.increment_only_full_position(yyleng);
-    yyextra.type = shipwright::token_type::variable_reference_open;
-
-    yyextra.start_condition = YY_START;
-    if (YY_START == VARIABLE_REFERENCE) {
-        yyextra.variable_reference_depth += 1;
-    } else {
-        yyextra.variable_reference_depth = 0;
-    }
-    BEGIN(VARIABLE_REFERENCE);
-    return 1;
-}
-
-<VARIABLE_REFERENCE>({escape_sequence}|[A-Za-z/_\.+-])+ {
-    yyextra.increment_position(yyleng);
-    yyextra.type = shipwright::token_type::variable_reference_piece;
-    return 1;
-}
-
-<VARIABLE_REFERENCE>\$ {
-    yyextra.increment_position(yyleng);
-    yyextra.type = shipwright::token_type::variable_reference_piece;
-    return 1;
-}
-
-<VARIABLE_REFERENCE>\} {
-    yyextra.increment_only_full_position(yyleng);
-    yyextra.type = shipwright::token_type::variable_reference_close;
-
-    if (yyextra.variable_reference_depth == 0) {
-        BEGIN(yyextra.start_condition);
-    } else {
-        yyextra.variable_reference_depth -= 1;
-    }
-
-    return 1;
+<QUOTE>([^\\"]|{escape_sequence}|{quoted_continuation})* {
+    yyextra.extend_match(yyleng);
 }
 
 <*>. {
@@ -352,7 +307,6 @@ namespace shipwright {
         assert(input_.size() < std::numeric_limits<int>::max());
         yy_scan_bytes(input_.data(), static_cast<int>(input_.size()), lexer_);
 
-        lookahead_token_ = ::read_token(input_, lexer_);
         advance();
     }
 
@@ -364,23 +318,7 @@ namespace shipwright {
 
     void lexer::advance()
     {
-        current_token_ =
-            std::exchange(lookahead_token_, ::read_token(input_, lexer_));
-
-        if (!lookahead_token_) {
-            return;
-        }
-
-        while (lookahead_token_->type == current_token_->type
-                && (current_token_->type == token_type::variable_reference_piece
-                    || current_token_->type == token_type::quoted_piece)) {
-            ::join_token(*current_token_, *lookahead_token_);
-
-            lookahead_token_ = ::read_token(input_, lexer_);
-            if (!lookahead_token_) {
-                return;
-            }
-        }
+        current_token_ = ::read_token(input_, lexer_);
     }
 
     bool lexer::has_next() const

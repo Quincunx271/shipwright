@@ -39,7 +39,6 @@ namespace shipwright {
 
         void* lexer_ = nullptr;
         std::optional<token> current_token_ = {};
-        std::optional<token> lookahead_token_ = {};
 
         std::string_view input_;
     };
