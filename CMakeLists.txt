@@ -11,7 +11,7 @@ list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 project(shipwright
   VERSION 0.0.1
   LANGUAGES C CXX
-  DESCRIPTION "A parser for the CMake language"
+  DESCRIPTION "A parser for the CMake scripting language"
 )
 
 include(is_root)
@@ -40,7 +40,7 @@ endif()
 include(pmm.cmake)
 pmm(CONAN)
 
-find_package(frozen REQUIRED)
+find_package(frozen 1.0.0 REQUIRED)
 find_package(FLEX 2.6.4 REQUIRED)
 find_package(BISON 3.0.4 REQUIRED)
 

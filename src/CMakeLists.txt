@@ -83,9 +83,6 @@ install(DIRECTORY shipwright/
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/shipwright"
   FILES_MATCHING PATTERN "*.hpp"
 )
-install(DIRECTORY "${generated_include_dir}/shipwright/"
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/shipwright"
-)
 
 include(CMakePackageConfigHelpers)
 
