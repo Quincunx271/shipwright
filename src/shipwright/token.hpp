@@ -28,6 +28,10 @@ namespace shipwright {
 
         bracket_comment,
         line_comment,
+
+        unterminated_bracket,
+        unterminated_quote,
+        end_of_file,
     };
 
     std::ostream& operator<<(

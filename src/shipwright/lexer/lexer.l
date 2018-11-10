@@ -7,10 +7,19 @@
 
 /*
 Some sections of code are borrowed from the CMake source code itself.
-Copied segments will be delimited by comments with the following text:
-"Copied with modifications from Source/LexerParser/cmListFileLexer.in.l"
-"End of copied CMake source code"
-Following is CMake's license (BSD 3-Clause):
+The full region of code from the CMake project will be delimited by comments
+with the following text (less the bullet points):
+
+* From CMake source code: Source/LexerParser/cmListFileLexer.in.l
+* End of copied CMake source code
+
+Within those comments, any region of code which is *not* CMake code will be
+delimited by comments with the following text (less the bullet points):
+
+Not CMake source code:
+CMake source code:
+
+CMake source code falls under CMake's license: the BSD 3-Clause license:
 
 --------------------------------------------------------------------------------
 
@@ -110,95 +119,99 @@ struct shipwright_cmake_lexer_impl_extra_vars
 %option never-interactive
 %option nounistd
 %pointer
-%x LINE_COMMENT
+
+/* From CMake source code: Source/LexerParser/cmListFileLexer.in.l */
+%x STRING
 %x BRACKET
-%x BRACKET_CLOSE
-%x QUOTE
+%x BRACKETEND
+%x COMMENT
 
-escape_identity \\[^A-Za-z0-9;]
-escape_encoded \\[trn]
-escape_semicolon \\;
-escape_sequence {escape_identity}|{escape_encoded}|{escape_semicolon}
-
-quoted_continuation \\\n
-
-/* Copied with modifications from Source/LexerParser/cmListFileLexer.in.l */
-
-unquoted_makevar \$\([A-Za-z0-9_]*\)
-unquoted ([^ \0\t\r\n\(\)#\\\"[=]|{escape_sequence})
-unquoted_legacy {unquoted_makevar}|{unquoted}|\"({unquoted_makevar}|{unquoted}|[ \t[=])*\"
-
-/* End of copied CMake source code */
+MAKEVAR \$\([A-Za-z0-9_]*\)
+UNQUOTED ([^ \0\t\r\n\(\)#\\\"[=]|\\[^\0\n])
+LEGACY {MAKEVAR}|{UNQUOTED}|\"({MAKEVAR}|{UNQUOTED}|[ \t[=])*\"
 
 %%
 
-[ \t]+ {
-    yyextra.increment_position(yyleng);
-    yyextra.type = shipwright::token_type::space;
-    return 1;
-}
-
+    /* Not CMake source code: */
 \n {
     yyextra.increment_only_full_position(yyleng);
     yyextra.type = shipwright::token_type::newline;
     return 1;
 }
+    /* CMake source code: */
 
-[A-Za-z_][A-Za-z0-9_]* {
-    yyextra.increment_position(yyleng);
-    yyextra.type = shipwright::token_type::identifier;
-    return 1;
-}
-
-\( {
-    yyextra.increment_only_full_position(yyleng);
-    yyextra.type = shipwright::token_type::lparen;
-    return 1;
-}
-
-\) {
-    yyextra.increment_only_full_position(yyleng);
-    yyextra.type = shipwright::token_type::rparen;
-    return 1;
-}
-
-# {
-    // Split in two to lower the precedence of this match
-    yyextra.update_position(yyleng, 1, yyleng - 1);
-    yyextra.type = shipwright::token_type::line_comment;
-    BEGIN(LINE_COMMENT);
-}
-
-<LINE_COMMENT>.* {
-    yyextra.extend_match(yyleng);
-    BEGIN(INITIAL);
-    return 1;
-}
-
-#?\[=*\[ {
+#?\[=*\[\n? {
+    /* Not CMake source code */
     bool const is_comment = yytext[0] == '#';
 
     yyextra.type = is_comment ? shipwright::token_type::bracket_comment
                               : shipwright::token_type::bracket_argument;
+
+    // Number of `=`s in the bracket
     yyextra.bracket_count = yyleng - 2;
     if (is_comment) yyextra.bracket_count -= 1;
 
+    // Reset token
     yyextra.increment_position(0);
+
+    // Update token content
     yyextra.full_token_length += yyleng;
     yyextra.current_position += yyleng;
+
     BEGIN(BRACKET);
 }
+    /* CMake source code: */
+
+# {
+    /* Not CMake source code: */
+    yyextra.update_position(yyleng, 1, yyleng - 1);
+    yyextra.type = shipwright::token_type::line_comment;
+    BEGIN(COMMENT);
+}
+    /* CMake source code: */
+
+<COMMENT>[^\0\n]* {
+    /* Not CMake source code: */
+    yyextra.extend_match(yyleng);
+    BEGIN(INITIAL);
+    return 1;
+}
+    /* CMake source code: */
+
+\( {
+    /* Not CMake source code: */
+    yyextra.increment_only_full_position(yyleng);
+    yyextra.type = shipwright::token_type::lparen;
+    return 1;
+}
+    /* CMake source code: */
+
+\) {
+    /* Not CMake source code: */
+    yyextra.increment_only_full_position(yyleng);
+    yyextra.type = shipwright::token_type::rparen;
+    return 1;
+}
+    /* CMake source code: */
+
+[A-Za-z_][A-Za-z0-9_]* {
+    /* Not CMake source code: */
+    yyextra.increment_position(yyleng);
+    yyextra.type = shipwright::token_type::identifier;
+    return 1;
+}
+    /* Not CMake source code: */
 
 <BRACKET>\] {
     yyextra.extend_match(yyleng);
-    BEGIN(BRACKET_CLOSE);
+    BEGIN(BRACKETEND);
 }
 
 <BRACKET>[^\]]* {
     yyextra.extend_match(yyleng);
 }
 
-<BRACKET_CLOSE>=*\] {
+<BRACKETEND>=*\] {
     if (yyextra.bracket_count == static_cast<std::size_t>(yyleng - 1)) {
         yyextra.extend_match(yyleng);
         yyextra.token_length -= yyleng + 1; // Subtract the bracket_close
@@ -211,59 +224,120 @@ unquoted_legacy {unquoted_makevar}|{unquoted}|\"({unquoted_makevar}|{unquoted}|[
     }
 }
 
-<BRACKET_CLOSE>. {
+<BRACKETEND>. {
     yyextra.extend_match(yyleng);
     BEGIN(BRACKET);
 }
+    /* CMake source code: */
 
-    /* Copied with modifications from Source/LexerParser/cmListFileLexer.in.l */
-({unquoted}|=|\[=*{unquoted})({unquoted}|[[=])* {
-    /* End of copied CMake source code */
+<BRACKET,BRACKETEND><<EOF>> {
+    /* Not CMake source code: */
+    yyextra.increment_position(0);
+    yyextra.type = shipwright::token_type::unterminated_bracket;
+    BEGIN(INITIAL);
+    return 1;
+}
+    /* CMake source code: */
+
+({UNQUOTED}|=|\[=*{UNQUOTED})({UNQUOTED}|[[=])* {
+    /* Not CMake source code: */
     yyextra.increment_position(yyleng);
     yyextra.type = shipwright::token_type::unquoted_argument;
     return 1;
 }
+    /* CMake source code: */
 
-    /* Copied with modifications from Source/LexerParser/cmListFileLexer.in.l */
-({unquoted_makevar}|{unquoted}|=|\[=*{unquoted_legacy})({unquoted_legacy}|[[=])* {
-    /* End of copied CMake source code */
+({MAKEVAR}|{UNQUOTED}|=|\[=*{LEGACY})({LEGACY}|[[=])* {
+    /* Not CMake source code: */
     yyextra.increment_position(yyleng);
     yyextra.type = shipwright::token_type::unquoted_argument;
     return 1;
 }
+    /* CMake source code: */
 
-    /* Copied with modifications from Source/LexerParser/cmListFileLexer.in.l */
 \[ {
-    /* End of copied CMake source code */
+    /* Not CMake source code: */
     yyextra.increment_position(yyleng);
     yyextra.type = shipwright::token_type::unquoted_argument;
     return 1;
 }
+    /* CMake source code: */
 
 \" {
+    /* Not CMake source code: */
     yyextra.increment_position(yyleng);
     yyextra.current_position += yyleng;
     yyextra.type = shipwright::token_type::quoted_argument;
-    BEGIN(QUOTE);
+    BEGIN(STRING);
 }
+    /* CMake source code: */
 
-<QUOTE>\" {
+<STRING>([^\\\0\n\"]|\\[^\0\n])+ {
+    /* Not CMake source code: */
+    yyextra.extend_match(yyleng);
+}
+    /* CMake source code: */
+
+<STRING>\\\n {
+    /* Not CMake source code: */
+    yyextra.extend_match(yyleng);
+}
+    /* CMake source code: */
+
+<STRING>\n {
+    /* Not CMake source code: */
+    yyextra.extend_match(yyleng);
+}
+    /* CMake source code: */
+
+<STRING>\" {
+    /* Not CMake source code: */
     yyextra.extend_full_match(yyleng);
     yyextra.token_length -= yyleng;
     BEGIN(INITIAL);
     return 1;
 }
+    /* CMake source code: */
 
-<QUOTE>([^\\"]|{escape_sequence}|{quoted_continuation})* {
+<STRING>[^\0\n] {
+    /* Not CMake source code: */
     yyextra.extend_match(yyleng);
 }
+    /* CMake source code: */
 
+<STRING><<EOF>> {
+    /* Not CMake source code: */
+    yyextra.increment_position(0);
+    yyextra.type = shipwright::token_type::unterminated_quote;
+    BEGIN(INITIAL);
+    return 1;
+}
+    /* CMake source code: */
+
+[ \t\r]+ {
+    /* Not CMake source code: */
+    yyextra.increment_position(yyleng);
+    yyextra.type = shipwright::token_type::space;
+    return 1;
+}
+    /* CMake source code: */
+
+    /* Not CMake source code: */
 <*>. {
     yyextra.increment_position(yyleng);
     yyextra.type = shipwright::token_type::unknown;
     return 1;
 }
+    /* CMake source code: */
 
+<<EOF>> {
+    /* Not CMake source code: */
+    yyextra.increment_position(0);
+    yyextra.type = shipwright::token_type::end_of_file;
+    return 0;
+}
+
+    /* End of copied CMake source code */
 %%
 
 namespace {

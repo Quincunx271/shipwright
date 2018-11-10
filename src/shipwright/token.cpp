@@ -28,6 +28,9 @@ namespace {
             {token_type::unquoted_argument, "unquoted_argument"},
             {token_type::bracket_comment, "bracket_comment"},
             {token_type::line_comment, "line_comment"},
+            {token_type::unterminated_bracket, "unterminated_bracket"},
+            {token_type::unterminated_quote, "unterminated_quote"},
+            {token_type::end_of_file, "end_of_file"},
         });
 }
 
