@@ -16,8 +16,8 @@ with the following text (less the bullet points):
 Within those comments, any region of code which is *not* CMake code will be
 delimited by comments with the following text (less the bullet points):
 
-Not CMake source code:
-CMake source code:
+* Not CMake source code:
+* CMake source code:
 
 CMake source code falls under CMake's license: the BSD 3-Clause license:
 
@@ -141,7 +141,7 @@ LEGACY {MAKEVAR}|{UNQUOTED}|\"({MAKEVAR}|{UNQUOTED}|[ \t[=])*\"
     /* CMake source code: */
 
 #?\[=*\[\n? {
-    /* Not CMake source code */
+    /* Not CMake source code: */
     bool const is_comment = yytext[0] == '#';
 
     yyextra.type = is_comment ? shipwright::token_type::bracket_comment
