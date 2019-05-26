@@ -65,6 +65,8 @@ class ShipwrightConanFile(ConanFile):
         else:
             self.build_requires('bison_installer/3.3.2@bincrafters/stable')
             self.build_requires('flex_installer/2.6.4@bincrafters/stable')
+            self.build_requires('bison/3.3.2@bincrafters/stable')
+            self.build_requires('flex/2.6.4@bincrafters/stable')
 
     def _configure_cmake(self):
         cmake = CMake(self)
