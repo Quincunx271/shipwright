@@ -39,6 +39,13 @@ namespace shipwright::ast {
         std::int64_t bracket_strength;
     };
 
+    struct argument;
+
+    struct parenthesized_argument
+    {
+        std::vector<argument> values;
+    };
+
     struct bracket_comment
     {
         bracket_argument value;
@@ -49,22 +56,24 @@ namespace shipwright::ast {
         std::string_view value;
     };
 
-    using argument = std::variant<bracket_argument, quoted_argument, unquoted_argument>;
+    struct argument
+    {
+        std::variant<bracket_argument, quoted_argument, unquoted_argument, parenthesized_argument,
+            line_comment, bracket_comment>
+            value;
+    };
 
     struct command_invocation
     {
         identifier command_id;
         std::vector<argument> arguments;
-        std::optional<line_comment> comment;
     };
 
-    struct space_or_comment_element
+    struct file_element
     {
-        std::vector<bracket_comment> bracket_comments;
+        std::variant<command_invocation, std::vector<bracket_comment>> value;
         std::optional<line_comment> comment;
     };
-
-    using file_element = std::variant<command_invocation, space_or_comment_element>;
 
     struct file
     {

@@ -18,7 +18,7 @@ flex_target(shipwright.lex shipwright/lexer/lexer.l "${CMAKE_CURRENT_BINARY_DIR}
 bison_target(shipwright.parser "${CMAKE_CURRENT_SOURCE_DIR}/shipwright/parser/parser.y" "${CMAKE_CURRENT_BINARY_DIR}/parser.cpp"
   DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/include/shipwright/parser_impl.hpp"
   COMPILE_FLAGS
-    "-Wall $<$<OR:$<CONFIG:DEBUG>,$<BOOL:${SHIPWRIGHT_ASSERTS}>>:--define=parse.assert=true>"
+    "-Wall --verbose $<$<OR:$<CONFIG:DEBUG>,$<BOOL:${SHIPWRIGHT_ASSERTS}>>:--define=parse.assert=true>"
 )
 add_flex_bison_dependency(shipwright.lex shipwright.parser)
 
@@ -56,6 +56,11 @@ set_property(SOURCE ${FLEX_shipwright.lex_OUTPUTS}
     # Flex generates INT8_MAX, etc, but we also #include <cstdint> which also defines those.
     # So, ignore macro redefinition.
     $<$<CXX_COMPILER_ID:MSVC>:/wd4005>
+)
+set_property(SOURCE ${BISON_shipwright.parser_OUTPUT_SOURCE}
+  PROPERTY COMPILE_OPTIONS
+    # Bison generates some empty switches
+    $<$<CXX_COMPILER_ID:MSVC>:/wd4065>
 )
 
 set_target_properties(shipwright
