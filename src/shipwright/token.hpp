@@ -34,8 +34,7 @@ namespace shipwright {
         end_of_file,
     };
 
-    std::ostream& operator<<(
-        std::ostream& lhs, debug_print<token_type> const& rhs);
+    std::ostream& operator<<(std::ostream& lhs, debug_print<token_type> const& rhs);
 
     struct token
     {

@@ -18,8 +18,8 @@
 namespace Catch {
     template <typename T>
     struct StringMaker<T,
-        std::void_t<decltype(std::declval<std::ostream&>()
-            << shipwright::debug_print(std::declval<T const&>()))>>
+        std::void_t<decltype(
+            std::declval<std::ostream&>() << shipwright::debug_print(std::declval<T const&>()))>>
     {
         static std::string convert(T const& value)
         {

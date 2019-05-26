@@ -43,11 +43,9 @@ namespace shipwright {
         std::string_view input_;
     };
 
-    std::ostream& operator<<(
-        std::ostream& out, debug_print<lexer::sentinel> const& sentinel);
+    std::ostream& operator<<(std::ostream& out, debug_print<lexer::sentinel> const& sentinel);
 
-    std::ostream& operator<<(
-        std::ostream& out, debug_print<lexer::iterator> const& iter);
+    std::ostream& operator<<(std::ostream& out, debug_print<lexer::iterator> const& iter);
 
     class lexer::iterator
     {

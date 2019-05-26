@@ -38,8 +38,7 @@ TEST_CASE("Can parse individual tokens", "[lexer]")
         {"\n", token{"", token_type::newline, "\n"}},
         {"(", token{"", token_type::lparen, "("}},
         {")", token{"", token_type::rparen, ")"}},
-        {"# some comment",
-            token{" some comment", token_type::line_comment, "# some comment"}},
+        {"# some comment", token{" some comment", token_type::line_comment, "# some comment"}},
         {"[[some bracket argument]]",
             token{"some bracket argument", token_type::bracket_argument,
                 "[[some bracket argument]]"}},
@@ -81,15 +80,13 @@ TEST_CASE("Can parse multiple tokens", "[lexer]")
 {
     static auto const test_values
         = std::vector<std::tuple<std::string, token, std::set<token_type>>>({
-            {" ", token{" ", token_type::space, " "},
-                std::set{token_type::space}},
+            {" ", token{" ", token_type::space, " "}, std::set{token_type::space}},
             {"\n", token{"", token_type::newline, "\n"}, {}},
             {"(", token{"", token_type::lparen, "("}, {}},
             {")", token{"", token_type::rparen, ")"}, {}},
             {
                 "# some comment",
-                token{" some comment", token_type::line_comment,
-                    "# some comment"},
+                token{" some comment", token_type::line_comment, "# some comment"},
                 std::set{
                     token_type::space,
                     token_type::lparen,
@@ -113,10 +110,8 @@ TEST_CASE("Can parse multiple tokens", "[lexer]")
             },
         });
 
-    auto [first, first_expected, ignore_succeeding]
-        = GENERATE(shipwright::test::each(test_values));
-    auto [second, second_expected, ignore]
-        = GENERATE(shipwright::test::each(test_values));
+    auto [first, first_expected, ignore_succeeding] = GENERATE(shipwright::test::each(test_values));
+    auto [second, second_expected, ignore] = GENERATE(shipwright::test::each(test_values));
     (void)ignore;
 
     if (ignore_succeeding.count(second_expected.type)) {
@@ -152,8 +147,7 @@ TEST_CASE("Can parse quoted arguments", "[lexer]")
         {
             "\"some quote\"",
             {
-                token{"some quote", token_type::quoted_argument,
-                    "\"some quote\""},
+                token{"some quote", token_type::quoted_argument, "\"some quote\""},
             },
         },
         {
@@ -166,8 +160,7 @@ TEST_CASE("Can parse quoted arguments", "[lexer]")
         {
             R"("some quote with \\ \" escape sequences")",
             {
-                token{R"(some quote with \\ \" escape sequences)",
-                    token_type::quoted_argument,
+                token{R"(some quote with \\ \" escape sequences)", token_type::quoted_argument,
                     R"("some quote with \\ \" escape sequences")"},
             },
         },
@@ -190,8 +183,7 @@ TEST_CASE("Can parse quoted arguments", "[lexer]")
         {
             "\"${reference}\"",
             {
-                token{"${reference}", token_type::quoted_argument,
-                    "\"${reference}\""},
+                token{"${reference}", token_type::quoted_argument, "\"${reference}\""},
             },
         },
         {

@@ -16,8 +16,7 @@
 
 namespace shipwright::test {
     template <typename Range>
-    using range_iterator_t
-        = std::decay_t<decltype(std::begin(std::declval<Range>()))>;
+    using range_iterator_t = std::decay_t<decltype(std::begin(std::declval<Range>()))>;
 
     template <typename Range,
         typename T = decltype(*std::declval<range_iterator_t<Range const&>>())>
@@ -46,8 +45,7 @@ namespace shipwright::test {
     template <typename Range>
     auto each(Range const& range)
     {
-        using value_type
-            = decltype(*std::declval<range_iterator_t<Range const&>>());
+        using value_type = decltype(*std::declval<range_iterator_t<Range const&>>());
 
         return Catch::Generators::GeneratorWrapper<value_type>{
             std::unique_ptr<Catch::Generators::IGenerator<value_type>>(

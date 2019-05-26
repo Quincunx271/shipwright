@@ -9,14 +9,12 @@
 #include <ostream>
 
 namespace shipwright {
-    std::ostream& operator<<(
-        std::ostream& out, debug_print<lexer::sentinel> const&)
+    std::ostream& operator<<(std::ostream& out, debug_print<lexer::sentinel> const&)
     {
         return out << "<<eof>>";
     }
 
-    std::ostream& operator<<(
-        std::ostream& out, debug_print<lexer::iterator> const& iter)
+    std::ostream& operator<<(std::ostream& out, debug_print<lexer::iterator> const& iter)
     {
         if (iter.value == lexer::sentinel{}) {
             return out << lexer::sentinel{};
