@@ -15,23 +15,27 @@ glob_mixed(RECURSE CONFIGURE_DEPENDS
 
 flex_target(shipwright.lex shipwright/lexer/lexer.l "${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp")
 
-set_property(SOURCE ${FLEX_shipwright.lex_OUTPUTS}
-  PROPERTY COMPILE_OPTIONS
-    # Flex generates some unused functions
-    $<$<CXX_COMPILER_ID:GNU>:-Wno-unused-function>
-    $<$<CXX_COMPILER_ID:Clang>:-Wno-unused-function>
-    # Flex redefines macros
-    $<$<CXX_COMPILER_ID:MSVC>:/wd4005>
+bison_target(shipwright.parser "${CMAKE_CURRENT_SOURCE_DIR}/shipwright/parser/parser.y" "${CMAKE_CURRENT_BINARY_DIR}/parser.cpp"
+  DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/include/shipwright/parser_impl.hpp"
+  COMPILE_FLAGS
+    "-Wall $<$<OR:$<CONFIG:DEBUG>,$<BOOL:${SHIPWRIGHT_ASSERTS}>>:--define=parse.assert=true>"
 )
+add_flex_bison_dependency(shipwright.lex shipwright.parser)
+
 add_library(shipwright
   ${sources}
   ${FLEX_shipwright.lex_OUTPUTS}
+  ${BISON_shipwright.parser_OUTPUT_SOURCE}
+  ${BISON_shipwright.parser_OUTPUT_HEADER}
 )
 add_library(shipwright::shipwright ALIAS shipwright)
 target_include_directories(shipwright
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+  PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/shipwright>
 )
 target_link_libraries(shipwright
   PRIVATE
@@ -41,7 +45,27 @@ target_link_libraries(shipwright
 add_executable(shipwright.lexer lexer.main.cpp)
 target_link_libraries(shipwright.lexer PRIVATE shipwright::shipwright)
 
+###########
+# Warnings
+##
+set_property(SOURCE ${FLEX_shipwright.lex_OUTPUTS}
+  PROPERTY COMPILE_OPTIONS
+    # Flex generates some unused functions
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-unused-function>
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-unused-function>
+    # Flex generates INT8_MAX, etc, but we also #include <cstdint> which also defines those.
+    # So, ignore macro redefinition.
+    $<$<CXX_COMPILER_ID:MSVC>:/wd4005>
+)
+
+set_target_properties(shipwright
+  PROPERTIES
+    STATIC_LIBRARY_OPTIONS $<$<CXX_COMPILER_ID:MSVC>:-IGNORE:4221> # Don't warn for empty cpp files
+)
+
+########
 # Tests
+##
 if(BUILD_TESTING)
   find_package(Catch2 2.4.0 REQUIRED)
 

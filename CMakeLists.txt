@@ -20,7 +20,8 @@ is_root(is_root_project)
 set(SHIPWRIGHT_DEVELOPER_DEFAULTS "${is_root_project}" CACHE BOOL "Default all options to developer-friendly values")
 
 option(BUILD_TESTING "Enable testing" ${SHIPWRIGHT_DEVELOPER_DEFAULTS})
-option(SHIPWRIGHT_TEST_COLOR "Force test color" OFF)
+option(SHIPWRIGHT_TEST_COLOR "Force test color" FALSE)
+option(SHIPWRIGHT_ASSERTS "Force asserts on." FALSE)
 
 if(CMAKE_SIZEOF_VOID_P STREQUAL 4)
   set(arch x86)
@@ -39,7 +40,7 @@ if(is_root_project)
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib")
 
   set(CMAKE_CXX_STANDARD 17)
-  set(CMAKE_CXX_EXTENSIONS OFF)
+  set(CMAKE_CXX_EXTENSIONS FALSE)
   list(APPEND CONAN_OPTIONS cppstd=17)
 endif()
 
@@ -53,7 +54,7 @@ pmm(CONAN
 
 find_package(frozen 1.0.0 REQUIRED)
 find_package(FLEX 2.6.4 REQUIRED)
-find_package(BISON 3.0.4 REQUIRED)
+find_package(BISON 3.3.2 REQUIRED)
 
 # Set up warnings / similar flags
 set(MSVC_flags /permissive-)
