@@ -90,19 +90,6 @@ install:
   - pip3 install conan --user
   - conan --version
   - conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-  # Install flex and bison
-  - conan info .
-  - export FLEX_PACKAGE_REFERENCE=$(conan info . --only None --package-filter flex*)
-  - export BISON_PACKAGE_REFERENCE=$(conan info. --only None --package-filter bison*)
-  - echo $FLEX_PACKAGE_REFERENCE
-  - echo $BISON_PACKAGE_REFERENCE
-  # Install flex explicitly (find_program prefers system /usr/bin/flex)
-  - CC=$(which gcc-8) CXX=$(which g++-8) conan install $FLEX_PACKAGE_REFERENCE
-  - conan info $FLEX_PACKAGE_REFERENCE --paths
-  - ls $(conan info $FLEX_PACKAGE_REFERENCE --paths | grep flex | grep package_folder | sed 's/\s*package_folder:\s*//')
-  - export FLEX_EXECUTABLE=$(conan info $FLEX_PACKAGE_REFERENCE --paths | grep flex | grep package_folder | sed 's/\s*package_folder:\s*//')/bin/flex
-  - echo $FLEX_EXECUTABLE
-  - $FLEX_EXECUTABLE --version
 
 before_script:
   # Configure, which would install dependencies via PMM
@@ -112,7 +99,6 @@ before_script:
     -DCMAKE_CXX_COMPILER=$CXX_COMPILER
     -DCMAKE_C_COMPILER=$C_COMPILER
     -DCMAKE_CXX_FLAGS_INIT=-Werror
-    -DFLEX_EXECUTABLE=$FLEX_EXECUTABLE
 
 script:
   - cmake --build . -j
