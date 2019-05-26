@@ -36,7 +36,7 @@ class ShipwrightConanFile(ConanFile):
     url = 'https://github.com/Quincunx271/shipwright'
     license = 'MPL-2.0'
     no_copy_source = True
-    generators = 'cmake_paths'
+    generators = 'cmake_paths', 'cmake'
 
     settings = 'os', 'compiler', 'build_type', 'arch'
     options = {
@@ -64,9 +64,7 @@ class ShipwrightConanFile(ConanFile):
             self.build_requires('winflexbison/2.5.18@bincrafters/stable')
         else:
             self.build_requires('bison_installer/3.3.2@bincrafters/stable')
-            # Not yet supported:
-            # self.build_requires('flex_installer/2.6.4@bincrafters/stable')
-            self.build_requires('flex/2.6.4@bincrafters/stable')
+            self.build_requires('flex_installer/2.6.4@bincrafters/stable')
 
     def _configure_cmake(self):
         cmake = CMake(self)

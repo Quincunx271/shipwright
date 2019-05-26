@@ -1,5 +1,4 @@
-dist: trusty
-sudo: false
+dist: xenial
 language: cpp
 
 matrix:
@@ -10,7 +9,7 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-6.0
+            - llvm-toolchain-xenial-6.0
           packages:
             - g++-8 # Gets newer version of libstdc++
             - clang-6.0
@@ -18,7 +17,6 @@ matrix:
         - C_COMPILER='clang-6.0'
         - CXX_COMPILER='clang++-6.0'
         - BUILD_TYPE=Debug
-        - NEEDS_EXPLICIT_FLEX=yes
 
     - os: linux
       compiler: clang
@@ -26,7 +24,7 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-7
+            - llvm-toolchain-xenial-7
           packages:
             - g++-8 # Gets newer version of libstdc++
             - clang-7
@@ -70,7 +68,6 @@ matrix:
         - BUILD_TYPE=Debug
 
 before_install:
-  - export PYENV_VERSION=3.6
   - export CC=$C_COMPILER
   - export CXX=$CXX_COMPILER
 
@@ -83,20 +80,29 @@ install:
     fi
   - |
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      travis_retry wget https://cmake.org/files/v3.12/cmake-3.12.3-Linux-x86_64.sh
-      sh ./cmake-3.12.3-Linux-x86_64.sh --prefix=$HOME --skip-license
+      travis_retry wget https://github.com/Kitware/CMake/releases/download/v3.14.4/cmake-3.14.4-Linux-x86_64.sh
+      sh ./cmake-3.14.4-Linux-x86_64.sh --prefix=$HOME --skip-license
     fi
   - cmake --version
+  - export PYENV_VERSION=$(pyenv versions | grep '3.' | sort --reverse | head -n 1 | xargs)
+  - pyenv versions
   # Install conan (Travis specific; PMM would normally handle this)
   - pip3 install conan --user
   - conan --version
   - conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-  # Install flex explicitly if required
-  - |
-    if [[ "$NEEDS_EXPLICIT_FLEX" == "yes" ]]; then
-      CC=$(which gcc-8) CXX=$(which g++-8) conan install flex/2.6.4@bincrafters/stable
-      export FLEX_EXECUTABLE=$(conan info flex/2.6.4@bincrafters/stable --paths | grep package_folder | sed 's/\s*package_folder:\s*//')/bin/flex
-    fi
+  # Install flex and bison
+  - conan info .
+  - export FLEX_PACKAGE_REFERENCE=$(conan info . --only None --package-filter flex*)
+  - export BISON_PACKAGE_REFERENCE=$(conan info. --only None --package-filter bison*)
+  - echo $FLEX_PACKAGE_REFERENCE
+  - echo $BISON_PACKAGE_REFERENCE
+  # Install flex explicitly (find_program prefers system /usr/bin/flex)
+  - CC=$(which gcc-8) CXX=$(which g++-8) conan install $FLEX_PACKAGE_REFERENCE
+  - conan info $FLEX_PACKAGE_REFERENCE --paths
+  - ls $(conan info $FLEX_PACKAGE_REFERENCE --paths | grep flex | grep package_folder | sed 's/\s*package_folder:\s*//')
+  - export FLEX_EXECUTABLE=$(conan info $FLEX_PACKAGE_REFERENCE --paths | grep flex | grep package_folder | sed 's/\s*package_folder:\s*//')/bin/flex
+  - echo $FLEX_EXECUTABLE
+  - $FLEX_EXECUTABLE --version
 
 before_script:
   # Configure, which would install dependencies via PMM
@@ -106,7 +112,7 @@ before_script:
     -DCMAKE_CXX_COMPILER=$CXX_COMPILER
     -DCMAKE_C_COMPILER=$C_COMPILER
     -DCMAKE_CXX_FLAGS_INIT=-Werror
-    ${FLEX_EXECUTABLE:+-DFLEX_EXECUTABLE=$FLEX_EXECUTABLE}
+    -DFLEX_EXECUTABLE=$FLEX_EXECUTABLE
 
 script:
   - cmake --build . -j
