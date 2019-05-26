@@ -49,7 +49,7 @@ class ShipwrightConanFile(ConanFile):
     }
     requires = (
         'frozen/20181020@bincrafters/stable',
-        'catch2/2.4.1@bincrafters/stable',
+        'Catch2/2.7.2@catchorg/stable',
     )
     exports_sources = 'cmake/*', 'src/*', 'CMakeLists.txt', 'LICENSE'
 
@@ -61,25 +61,17 @@ class ShipwrightConanFile(ConanFile):
 
     def build_requirements(self):
         if self.settings.os == 'Windows':
-            self.build_requires('winflexbison/2.5.16@bincrafters/stable')
+            self.build_requires('winflexbison/2.5.18@bincrafters/stable')
         else:
-            self.build_requires('bison/3.0.4@bincrafters/stable')
+            self.build_requires('bison_installer/3.3.2@bincrafters/stable')
+            # Not yet supported:
+            # self.build_requires('flex_installer/2.6.4@bincrafters/stable')
             self.build_requires('flex/2.6.4@bincrafters/stable')
 
     def _configure_cmake(self):
         cmake = CMake(self)
         cmake.configure()
         return cmake
-
-    def source(self):
-        hidden_pmm = '''
-        include("${CMAKE_BINARY_DIR}/conan_paths.cmake")
-        function(pmm)
-        endfunction()
-        '''
-
-        tools.save('pmm.cmake', hidden_pmm)
-
 
     def build(self):
         cmake = self._configure_cmake()

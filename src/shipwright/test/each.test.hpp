@@ -24,25 +24,34 @@ namespace shipwright::test {
     class Each : public Catch::Generators::IGenerator<T>
     {
         Range const& range;
+        range_iterator_t<Range> iter;
 
     public:
         Each(Range const& range)
             : range{range}
+            , iter{std::begin(this->range)}
         {}
 
-        T get(std::size_t index) const override
+        T const& get() const override
         {
-            return *std::next(std::begin(range), index);
+            return *iter;
+        }
+
+        bool next() override
+        {
+            return ++iter == std::end(range);
         }
     };
 
     template <typename Range>
     auto each(Range const& range)
     {
-        return Catch::Generators::Generator<decltype(
-            *std::declval<range_iterator_t<Range const&>>())>{
-            static_cast<std::size_t>(std::size(range)),
-            std::make_unique<Each<Range>>(range),
+        using value_type
+            = decltype(*std::declval<range_iterator_t<Range const&>>());
+
+        return Catch::Generators::GeneratorWrapper<value_type>{
+            std::unique_ptr<Catch::Generators::IGenerator<value_type>>(
+                std::make_unique<Each<Range>>(range)),
         };
     }
 }

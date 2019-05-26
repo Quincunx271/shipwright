@@ -22,6 +22,13 @@ set(SHIPWRIGHT_DEVELOPER_DEFAULTS "${is_root_project}" CACHE BOOL "Default all o
 option(BUILD_TESTING "Enable testing" ${SHIPWRIGHT_DEVELOPER_DEFAULTS})
 option(SHIPWRIGHT_TEST_COLOR "Force test color" OFF)
 
+if(CMAKE_SIZEOF_VOID_P STREQUAL 4)
+  set(arch x86)
+else()
+  set(arch x86_64)
+endif()
+set(SHIPWRIGHT_HOST_ARCH "${arch}" CACHE STRING "Host architecture")
+
 if(BUILD_TESTING)
   enable_testing()
 endif()
@@ -38,7 +45,11 @@ endif()
 
 # Set up dependencies
 include(pmm.cmake)
-pmm(CONAN)
+pmm(CONAN
+  SETTINGS
+    "os_build=${CMAKE_HOST_SYSTEM_NAME}"
+    "arch_build=${arch}"
+)
 
 find_package(frozen 1.0.0 REQUIRED)
 find_package(FLEX 2.6.4 REQUIRED)
