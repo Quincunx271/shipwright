@@ -7,6 +7,7 @@
 
 /*
 Some sections of code are borrowed from the CMake source code itself.
+Most of the regular expressions come from the CMake source, as do the start conditions.
 The full region of code from the CMake project will be delimited by comments
 with the following text (less the bullet points):
 
